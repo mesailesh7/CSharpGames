@@ -1,0 +1,85 @@
+ The Goal: Calculate SubTotal and Tax
+
+
+  The main goal of these two lines is to calculate the total price of all items in an order (SubTotal) and then
+  calculate the sales tax on that subtotal (Tax).
+
+
+  Both lines do almost the same calculation, so let's focus on the SubTotal line first.
+
+  Breaking Down the SubTotal Calculation
+
+
+  Here's the line of code:
+
+
+   1 SubTotal = o.OrderDetails.Sum(od => od.UnitPrice * od.Quantity * (1 - (decimal)od.Discount)),
+
+
+
+  Let's dissect it from the inside out.
+
+   1. `o.OrderDetails`: This refers to the list of all individual items included in the current order (o). Think
+      of it as a list of rows on a receipt, where each row is one product.
+
+
+   2. `.Sum(...)`: This is a LINQ method that calculates the sum of a numeric property for every item in a list.
+      In this case, it's going to add up the final price of each OrderDetail to get the SubTotal.
+
+
+   3. `od => ...`: This is a lambda expression. It's a short way of writing a function that will be executed for
+      each item in the OrderDetails list. The od is a variable that represents a single order detail (one item in
+      the order) as the .Sum() method loops through them.
+
+
+   4. `od.UnitPrice * od.Quantity`: This is the standard way to calculate the total price for a single item before
+      any discounts. For example, if UnitPrice is $10 and the Quantity is 2, the result is $20.
+
+
+   5. `(1 - (decimal)od.Discount)`: This part calculates the discount.
+       * od.Discount is a number representing the discount percentage. For example, a 10% discount would be
+         represented as 0.10.
+       * The error you saw was because Discount was a float (a less precise decimal type) and UnitPrice was a
+         decimal (a more precise type used for money). C# doesn't let you multiply these two different types
+         together directly.
+       * (decimal)od.Discount is a cast. It tells the compiler, "Treat this float value as a decimal for this
+         calculation." This solves the error.
+       * 1 - (decimal)od.Discount gives you the percentage of the price the customer actually has to pay. For a
+         10% discount (0.10), this would be 1 - 0.10 = 0.90. So, the customer pays 90% of the original price.
+
+   6. Putting it all together: For each order detail (od), the code calculates:
+      UnitPrice * Quantity * (PercentageToPay)
+
+
+      The .Sum() method then adds up these results for all items in the order to get the final SubTotal.
+
+  The Tax Calculation
+
+  Now, let's look at the Tax line:
+
+
+
+   1 Tax = o.OrderDetails.Sum(od => od.UnitPrice * od.Quantity * (1 - (decimal)od.Discount)) * 0.05m
+
+
+  This line is almost identical to the SubTotal calculation.
+
+
+   1. It first calculates the exact same SubTotal value again by summing up the final price of all items after
+      discounts.
+   2. Then, it multiplies that total by `0.05m`.
+       * 0.05 represents a 5% tax rate.
+       * The m at the end of 0.05m tells the C# compiler that this number is a decimal type, which is important
+         for financial calculations to avoid small rounding errors.
+
+  So, the Tax is simply the SubTotal multiplied by 5%.
+
+  Summary for a Beginner
+
+
+   * SubTotal: We go through each item in the order, calculate its price after discount, and then add all those
+     prices together.
+   * Tax: We take that final SubTotal and multiply it by the tax rate (5% in this case) to find out how much tax
+     is owed.
+   * The Fix: The key change was adding (decimal) to ensure that all the numbers in our calculation were of the
+     same high-precision type, which is what C# requires for these kinds of operations.
